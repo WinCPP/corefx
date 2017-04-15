@@ -96,7 +96,7 @@ namespace System.SpanTests
             Assert.Equal<int>(expected, dst);  // CopyTo() checks for sufficient space before doing any copying.
         }
 
-        [Fact]
+        [Trait("category", "Mandar")]
         public static void Overlapping1()
         {
             int[] a = { 90, 91, 92, 93, 94, 95, 96, 97 };
@@ -109,7 +109,7 @@ namespace System.SpanTests
             Assert.Equal<int>(expected, a);
         }
 
-        [Fact]
+        [Trait("category", "Mandar")]
         public static void Overlapping2()
         {
             int[] a = { 90, 91, 92, 93, 94, 95, 96, 97 };
