@@ -155,6 +155,106 @@ namespace System
             }
         }
 
+        public static unsafe void CopyToSplit<T>(ref T dst, int dstLength, ref T src, int srcLength)
+        {
+            IntPtr srcMinusDst = Unsafe.ByteOffset<T>(ref dst, ref src);
+            bool srcGreaterThanDst = (sizeof(IntPtr) == sizeof(int)) ? srcMinusDst.ToInt32() >= 0 : srcMinusDst.ToInt64() >= 0;
+            IntPtr tailDiff;
+
+            if (srcGreaterThanDst)
+            {
+                // If the start of source is greater than the start of destination, then we need to calculate
+                // the different between the end of destination relative to the start of source.
+                tailDiff = Unsafe.ByteOffset<T>(ref Unsafe.Add<T>(ref dst, dstLength), ref src);
+            }
+            else
+            {
+                // If the start of source is less than the start of destination, then we need to calculate
+                // the different between the end of source relative to the start of destunation.
+                tailDiff = Unsafe.ByteOffset<T>(ref Unsafe.Add<T>(ref src, srcLength), ref dst);
+            }
+
+            // If the source is entirely before or entirely after the destination and the type inside the span is not
+            // itself a reference type or containing reference types, then we can do a simple block copy of the data.
+            bool isOverlapped = (sizeof(IntPtr) == sizeof(int)) ? tailDiff.ToInt32() < 0 : tailDiff.ToInt64() < 0;
+            if (!isOverlapped && !SpanHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                ref byte dstBytes = ref Unsafe.As<T, byte>(ref dst);
+                ref byte srcBytes = ref Unsafe.As<T, byte>(ref src);
+                ulong byteCount = (ulong)srcLength * (ulong)Unsafe.SizeOf<T>();
+                ulong index = 0;
+
+                while (index < byteCount)
+                {
+                    uint blockSize = (byteCount - index) > uint.MaxValue ? uint.MaxValue : (uint)(byteCount - index);
+                    Unsafe.CopyBlock(
+                        ref Unsafe.Add(ref dstBytes, (IntPtr)index),
+                        ref Unsafe.Add(ref srcBytes, (IntPtr)index),
+                        blockSize);
+                    index += blockSize;
+                }
+            }
+            else
+            {
+                if (srcGreaterThanDst)
+                {
+                    // Source address greater than or equal to destination address. Can do normal copy.
+                    int count = 0;
+                    for (; count < (srcLength & ~7); count += 8)
+                    {
+                        Unsafe.Add<T>(ref dst, count + 0) = Unsafe.Add<T>(ref src, count + 0);
+                        Unsafe.Add<T>(ref dst, count + 1) = Unsafe.Add<T>(ref src, count + 1);
+                        Unsafe.Add<T>(ref dst, count + 2) = Unsafe.Add<T>(ref src, count + 2);
+                        Unsafe.Add<T>(ref dst, count + 3) = Unsafe.Add<T>(ref src, count + 3);
+                        Unsafe.Add<T>(ref dst, count + 4) = Unsafe.Add<T>(ref src, count + 4);
+                        Unsafe.Add<T>(ref dst, count + 5) = Unsafe.Add<T>(ref src, count + 5);
+                        Unsafe.Add<T>(ref dst, count + 6) = Unsafe.Add<T>(ref src, count + 6);
+                        Unsafe.Add<T>(ref dst, count + 7) = Unsafe.Add<T>(ref src, count + 7);
+                    }
+                    if (count < (srcLength & ~3))
+                    {
+                        Unsafe.Add<T>(ref dst, count + 0) = Unsafe.Add<T>(ref src, count + 0);
+                        Unsafe.Add<T>(ref dst, count + 1) = Unsafe.Add<T>(ref src, count + 1);
+                        Unsafe.Add<T>(ref dst, count + 2) = Unsafe.Add<T>(ref src, count + 2);
+                        Unsafe.Add<T>(ref dst, count + 3) = Unsafe.Add<T>(ref src, count + 3);
+                        count += 4;
+                    }
+                    for (; count < srcLength; ++count)
+                    {
+                        Unsafe.Add<T>(ref dst, count) = Unsafe.Add<T>(ref src, count);
+                    }
+                }
+                else
+                {
+                    // Source address less than destination address. Must do backward copy.
+                    int count = srcLength;
+                    for (; (count & ~7) != 0; count -= 8)
+                    {
+                        Unsafe.Add<T>(ref dst, count - 7) = Unsafe.Add<T>(ref src, count - 7);
+                        Unsafe.Add<T>(ref dst, count - 6) = Unsafe.Add<T>(ref src, count - 6);
+                        Unsafe.Add<T>(ref dst, count - 5) = Unsafe.Add<T>(ref src, count - 5);
+                        Unsafe.Add<T>(ref dst, count - 4) = Unsafe.Add<T>(ref src, count - 4);
+                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
+                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
+                        Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
+                        Unsafe.Add<T>(ref dst, count - 0) = Unsafe.Add<T>(ref src, count - 0);
+                    }
+                    if ((count & ~3) != 0)
+                    {
+                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
+                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
+                        Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
+                        Unsafe.Add<T>(ref dst, count - 0) = Unsafe.Add<T>(ref src, count - 0);
+                        count -= 4;
+                    }
+                    for (; count != 0; --count)
+                    {
+                        Unsafe.Add<T>(ref dst, count) = Unsafe.Add<T>(ref src, count);
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Computes "start + index * sizeof(T)", using the unsigned IntPtr-sized multiplication for 32 and 64 bits.
         ///
