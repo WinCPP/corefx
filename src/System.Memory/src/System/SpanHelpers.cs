@@ -228,28 +228,28 @@ namespace System
                 {
                     // Source address less than destination address. Must do backward copy.
                     int count = srcLength;
-                    for (; (count & ~7) != 0; count -= 8)
+                    for (; count > 7; count -= 8)
                     {
-                        Unsafe.Add<T>(ref dst, count - 7) = Unsafe.Add<T>(ref src, count - 7);
-                        Unsafe.Add<T>(ref dst, count - 6) = Unsafe.Add<T>(ref src, count - 6);
-                        Unsafe.Add<T>(ref dst, count - 5) = Unsafe.Add<T>(ref src, count - 5);
+                        Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
+                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
+                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
                         Unsafe.Add<T>(ref dst, count - 4) = Unsafe.Add<T>(ref src, count - 4);
-                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
-                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
-                        Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
-                        Unsafe.Add<T>(ref dst, count - 0) = Unsafe.Add<T>(ref src, count - 0);
+                        Unsafe.Add<T>(ref dst, count - 5) = Unsafe.Add<T>(ref src, count - 5);
+                        Unsafe.Add<T>(ref dst, count - 6) = Unsafe.Add<T>(ref src, count - 6);
+                        Unsafe.Add<T>(ref dst, count - 7) = Unsafe.Add<T>(ref src, count - 7);
+                        Unsafe.Add<T>(ref dst, count - 8) = Unsafe.Add<T>(ref src, count - 8);
                     }
-                    if ((count & ~3) != 0)
+                    if (count > 3)
                     {
-                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
-                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
                         Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
-                        Unsafe.Add<T>(ref dst, count - 0) = Unsafe.Add<T>(ref src, count - 0);
+                        Unsafe.Add<T>(ref dst, count - 2) = Unsafe.Add<T>(ref src, count - 2);
+                        Unsafe.Add<T>(ref dst, count - 3) = Unsafe.Add<T>(ref src, count - 3);
+                        Unsafe.Add<T>(ref dst, count - 4) = Unsafe.Add<T>(ref src, count - 4);
                         count -= 4;
                     }
                     for (; count != 0; --count)
                     {
-                        Unsafe.Add<T>(ref dst, count) = Unsafe.Add<T>(ref src, count);
+                        Unsafe.Add<T>(ref dst, count - 1) = Unsafe.Add<T>(ref src, count - 1);
                     }
                 }
             }

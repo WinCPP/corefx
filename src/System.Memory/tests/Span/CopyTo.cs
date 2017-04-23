@@ -309,12 +309,12 @@ namespace System.SpanTests
             int elementCount = size;
             int spanCount = elementCount * 4;
 
-            var theArray = new T[spanCount];
-            var srcSpan = new Span<T>(theArray, 0, elementCount * 2);
 
             for (int iteration = 0; iteration < iterationCount; ++iteration)
             {
-                var destSpan = new Span<T>(theArray, elementCount + iteration, elementCount * 2);
+                var theArray = new T[spanCount];
+                var srcSpan = new Span<T>(theArray, 0, elementCount * 2);
+                var destSpan = new Span<T>(theArray, elementCount, elementCount * 2);
 
                 GC.Collect();
 
@@ -333,12 +333,11 @@ namespace System.SpanTests
             int elementCount = size;
             int spanCount = elementCount * 4;
 
-            var theArray = new T[spanCount];
-            var destSpan = new Span<T>(theArray, 0, elementCount * 2);
-
             for (int iteration = 0; iteration < iterationCount; ++iteration)
             {
-                var srcSpan = new Span<T>(theArray, elementCount + iteration, elementCount * 2);
+                var theArray = new T[spanCount];
+                var srcSpan = new Span<T>(theArray, elementCount, elementCount * 2);
+                var destSpan = new Span<T>(theArray, 0, elementCount * 2);
 
                 GC.Collect();
 
