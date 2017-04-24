@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Xunit;
 
@@ -252,6 +254,98 @@ namespace System.SpanTests
                     if (allocatedFirst) AllocationHelper.ReleaseNative(ref memBlockFirst);
                     if (allocatedSecond) AllocationHelper.ReleaseNative(ref memBlockSecond);
                 }
+            }
+        }
+
+        private struct TestData
+        {
+            public int a;
+            public int b;
+            public long c;
+            public char d;
+            public TestData(int a = 0, int b = 0, long c = 0, char d = '\0')
+            {
+                this.a = a;
+                this.b = b;
+                this.c = c;
+                this.d = d;
+            }
+        }
+
+        [Fact]
+        [Trait("category", "mperf")]
+        public static void PerfTestDriver()
+        {
+            CopyPerfTest<int>();
+            CopyPerfTest<TestData>();
+        }
+
+        private static void CopyPerfTest<T>()
+        {
+            int iterationCount = 20;
+            var timeSpent = new long[iterationCount];
+
+            CopyPerfTestWrapperBackward<T>(20000000, iterationCount, timeSpent);
+            Console.WriteLine("------------- Backward Type: " + typeof(T).ToString() + " -------------");
+            foreach (var item in timeSpent)
+            {
+                Console.WriteLine(item);
+            }
+            Console.WriteLine("-------------");
+
+            CopyPerfTestWrapperForward<T>(20000000, iterationCount, timeSpent);
+            Console.WriteLine("------------- Forward Type: " + typeof(T).ToString() + " -------------");
+            foreach (var item in timeSpent)
+            {
+                Console.WriteLine(item);
+            }
+            Console.WriteLine("-------------");
+        }
+
+        private static void CopyPerfTestWrapperBackward<T>(int size, int iterationCount, long[] timeSpent)
+        {
+            Stopwatch stopWatch = new Stopwatch();
+
+            int elementCount = size;
+            int spanCount = elementCount * 4;
+
+
+            for (int iteration = 0; iteration < iterationCount; ++iteration)
+            {
+                var theArray = new T[spanCount];
+                var srcSpan = new Span<T>(theArray, 0, elementCount * 2);
+                var destSpan = new Span<T>(theArray, elementCount, elementCount * 2);
+
+                GC.Collect();
+
+                stopWatch.Reset();
+                stopWatch.Start();
+                srcSpan.CopyTo(destSpan);
+                stopWatch.Stop();
+                timeSpent[iteration] = stopWatch.ElapsedMilliseconds;
+            }
+        }
+
+        private static void CopyPerfTestWrapperForward<T>(int size, int iterationCount, long[] timeSpent)
+        {
+            Stopwatch stopWatch = new Stopwatch();
+
+            int elementCount = size;
+            int spanCount = elementCount * 4;
+
+            for (int iteration = 0; iteration < iterationCount; ++iteration)
+            {
+                var theArray = new T[spanCount];
+                var srcSpan = new Span<T>(theArray, elementCount, elementCount * 2);
+                var destSpan = new Span<T>(theArray, 0, elementCount * 2);
+
+                GC.Collect();
+
+                stopWatch.Reset();
+                stopWatch.Start();
+                srcSpan.CopyTo(destSpan);
+                stopWatch.Stop();
+                timeSpent[iteration] = stopWatch.ElapsedMilliseconds;
             }
         }
     }
