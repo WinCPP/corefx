@@ -138,6 +138,67 @@ namespace System.IO.Tests
             }
         }
 
+        [Benchmark]
+        [MemberData(nameof(WriteLengthMemberData))]
+        public void WriteLineString(int writeLength)
+        {
+            string value = new string('a', writeLength);
+            int innerIterations = MemoryStreamSize / writeLength;
+            int outerIteration = TotalWriteCount / innerIterations;
+            using (var stream = new MemoryStream(MemoryStreamSize))
+            {
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false, true), DefaultStreamWriterBufferSize, true))
+                {
+                    foreach (var iteration in Benchmark.Iterations)
+                    {
+                        using (iteration.StartMeasurement())
+                        {
+                            for (int i = 0; i < outerIteration; i++)
+                            {
+                                for (int j = 0; j < innerIterations; j++)
+                                {
+                                    writer.WriteLine(value);
+                                }
+                                writer.Flush();
+                                stream.Position = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [Benchmark]
+        [MemberData(nameof(WriteLengthMemberData))]
+        public void WriteLineReadOnlySpan(int writeLength)
+        {
+            string value = new string('a', writeLength);
+            ReadOnlySpan<char> span = value.AsReadOnlySpan();
+            int innerIterations = MemoryStreamSize / writeLength;
+            int outerIteration = TotalWriteCount / innerIterations;
+            using (var stream = new MemoryStream(MemoryStreamSize))
+            {
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false, true), DefaultStreamWriterBufferSize, true))
+                {
+                    foreach (var iteration in Benchmark.Iterations)
+                    {
+                        using (iteration.StartMeasurement())
+                        {
+                            for (int i = 0; i < outerIteration; i++)
+                            {
+                                for (int j = 0; j < innerIterations; j++)
+                                {
+                                    writer.WriteLine(span);
+                                }
+                                writer.Flush();
+                                stream.Position = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public static IEnumerable<object[]> WriteLengthMemberData()
         {
             yield return new object[] { 2 };

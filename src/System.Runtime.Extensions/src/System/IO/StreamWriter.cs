@@ -331,13 +331,52 @@ namespace System.IO
                 return;
             }
 
-            if (GetType() == typeof(StreamWriter))
+            CheckAsyncTaskInProgress();
+
+            // Threshold of 4 was chosen after running perf tests
+            if (buffer.Length <= 4)
             {
-                WriteCore(new ReadOnlySpan<char>(buffer));
+                for (int i = 0; i < buffer.Length; i++)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    Debug.Assert(_charLen - _charPos > 0, "StreamWriter::Write(char[]) isn't making progress!  This is most likely a race in user code.");
+                    _charBuffer[_charPos] = buffer[i];
+                    _charPos++;
+                }
             }
             else
             {
-                base.Write(buffer);
+                int count = buffer.Length;
+
+                int index = 0;
+                while (count > 0)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    int n = _charLen - _charPos;
+                    if (n > count)
+                    {
+                        n = count;
+                    }
+
+                    Debug.Assert(n > 0, "StreamWriter::Write(char[]) isn't making progress!  This is most likely a race in user code.");
+                    Buffer.BlockCopy(buffer, index * sizeof(char), _charBuffer, _charPos * sizeof(char), n * sizeof(char));
+                    _charPos += n;
+                    index += n;
+                    count -= n;
+                }
+            }
+
+            if (_autoFlush)
+            {
+                Flush(true, false);
             }
         }
 
@@ -359,29 +398,56 @@ namespace System.IO
             {
                 throw new ArgumentException(SR.Argument_InvalidOffLen);
             }
-            if (GetType() == typeof(StreamWriter))
+
+            CheckAsyncTaskInProgress();
+
+            // Threshold of 4 was chosen after running perf tests
+            if (count <= 4)
             {
-                WriteCore(new ReadOnlySpan<char>(buffer, index, count));
+                while (count > 0)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    Debug.Assert(_charLen - _charPos > 0, "StreamWriter::Write(char[]) isn't making progress!  This is most likely a race in user code.");
+                    _charBuffer[_charPos] = buffer[index];
+                    _charPos++;
+                    index++;
+                    count--;
+                }
             }
             else
             {
-                base.Write(buffer, index, count);
+                while (count > 0)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    int n = _charLen - _charPos;
+                    if (n > count)
+                    {
+                        n = count;
+                    }
+
+                    Debug.Assert(n > 0, "StreamWriter::Write(char[], int, int) isn't making progress!  This is most likely a race condition in user code.");
+                    Buffer.BlockCopy(buffer, index * sizeof(char), _charBuffer, _charPos * sizeof(char), n * sizeof(char));
+                    _charPos += n;
+                    index += n;
+                    count -= n;
+                }
+            }
+
+            if (_autoFlush)
+            {
+                Flush(true, false);
             }
         }
 
         public override void Write(ReadOnlySpan<char> source)
-        {
-            if (GetType() == typeof(StreamWriter))
-            {
-                WriteCore(source);
-            }
-            else
-            {
-                base.Write(source);
-            }
-        }
-
-        private void WriteCore(ReadOnlySpan<char> source)
         {
             CheckAsyncTaskInProgress();
 
@@ -441,13 +507,52 @@ namespace System.IO
                 return;
             }
 
-            if (GetType() == typeof(StreamWriter))
+            CheckAsyncTaskInProgress();
+
+            int count = value.Length;
+
+            // Threshold of 4 was chosen after running perf tests
+            if (count <= 4)
             {
-                WriteCore(value.AsReadOnlySpan());
+                for (int i = 0; i < count; i++)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    Debug.Assert(_charLen - _charPos > 0, "StreamWriter::Write(String) isn't making progress!  This is most likely a race condition in user code.");
+                    _charBuffer[_charPos] = value[i];
+                    _charPos++;
+                }
             }
             else
             {
-                base.Write(value);
+                int index = 0;
+                while (count > 0)
+                {
+                    if (_charPos == _charLen)
+                    {
+                        Flush(false, false);
+                    }
+
+                    int n = _charLen - _charPos;
+                    if (n > count)
+                    {
+                        n = count;
+                    }
+
+                    Debug.Assert(n > 0, "StreamWriter::Write(String) isn't making progress!  This is most likely a race condition in user code.");
+                    value.CopyTo(index, _charBuffer, _charPos, n);
+                    _charPos += n;
+                    index += n;
+                    count -= n;
+                }
+            }
+
+            if (_autoFlush)
+            {
+                Flush(true, false);
             }
         }
 
@@ -462,23 +567,6 @@ namespace System.IO
                 value = String.Empty;
             }
 
-            if (GetType() == typeof(StreamWriter))
-            {
-                WriteLineCore(value.AsReadOnlySpan());
-            }
-            else
-            {
-                base.WriteLine(value);
-            }
-        }
-
-        public override void WriteLine(ReadOnlySpan<char> source)
-        {
-            WriteLineCore(source);
-        }
-
-        private void WriteLineCore(ReadOnlySpan<char> value)
-        {
             CheckAsyncTaskInProgress();
 
             int count = value.Length;
@@ -497,7 +585,51 @@ namespace System.IO
                 }
 
                 Debug.Assert(n > 0, "StreamWriter::WriteLine(String) isn't making progress!  This is most likely a race condition in user code.");
-                value.Slice(index, n).CopyTo(new Span<char>(_charBuffer, _charPos, n));
+                value.CopyTo(index, _charBuffer, _charPos, n);
+                _charPos += n;
+                index += n;
+                count -= n;
+            }
+
+            char[] coreNewLine = CoreNewLine;
+            for (int i = 0; i < coreNewLine.Length; i++)   // Expect 2 iterations, no point calling BlockCopy
+            {
+                if (_charPos == _charLen)
+                {
+                    Flush(false, false);
+                }
+
+                _charBuffer[_charPos] = coreNewLine[i];
+                _charPos++;
+            }
+
+            if (_autoFlush)
+            {
+                Flush(true, false);
+            }
+        }
+
+        public override void WriteLine(ReadOnlySpan<char> source)
+        {
+            CheckAsyncTaskInProgress();
+
+            int count = source.Length;
+            int index = 0;
+            while (count > 0)
+            {
+                if (_charPos == _charLen)
+                {
+                    Flush(false, false);
+                }
+
+                int n = _charLen - _charPos;
+                if (n > count)
+                {
+                    n = count;
+                }
+
+                Debug.Assert(n > 0, "StreamWriter::WriteLine(String) isn't making progress!  This is most likely a race condition in user code.");
+                source.Slice(index, n).CopyTo(new Span<char>(_charBuffer, _charPos, n));
                 _charPos += n;
                 index += n;
                 count -= n;
