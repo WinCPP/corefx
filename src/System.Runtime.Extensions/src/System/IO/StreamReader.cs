@@ -406,6 +406,60 @@ namespace System.IO
             return charsRead;
         }
 
+        public override int Read(Span<char> destination)
+        {
+            if (buffer.Length - index < count)
+            {
+                throw new ArgumentException(SR.Argument_InvalidOffLen);
+            }
+
+            if (_stream == null)
+            {
+                throw new ObjectDisposedException(null, SR.ObjectDisposed_ReaderClosed);
+            }
+
+            CheckAsyncTaskInProgress();
+
+            int charsRead = 0;
+            int count = destination.Length;
+            // As a perf optimization, if we had exactly one buffer's worth of 
+            // data read in, let's try writing directly to the user's buffer.
+            bool readToUserBuffer = false;
+            while (count > 0)
+            {
+                int n = _charLen - _charPos;
+                if (n == 0)
+                {
+                    n = ReadBuffer(buffer, index + charsRead, count, out readToUserBuffer);
+                }
+                if (n == 0)
+                {
+                    break;  // We're at EOF
+                }
+                if (n > count)
+                {
+                    n = count;
+                }
+                if (!readToUserBuffer)
+                {
+                    new ReadOnlySpan<char>(_charBuffer, _charPos, n).CopyTo(destination.Slice(charsRead));
+                    _charPos += n;
+                }
+
+                charsRead += n;
+                count -= n;
+                // This function shouldn't block for an indefinite amount of time,
+                // or reading from a network stream won't work right.  If we got
+                // fewer bytes than we requested, then we want to break right here.
+                if (_isBlocked)
+                {
+                    break;
+                }
+            }
+
+            return charsRead;
+        }
+
         public override string ReadToEnd()
         {
             if (_stream == null)
@@ -764,6 +818,127 @@ namespace System.IO
             return charsRead;
         }
 
+        // This version has a perf optimization to decode data DIRECTLY into the 
+        // user's buffer, bypassing StreamReader's own buffer.
+        // This gives a > 20% perf improvement for our encodings across the board,
+        // but only when asking for at least the number of characters that one
+        // buffer's worth of bytes could produce.
+        // This optimization, if run, will break SwitchEncoding, so we must not do 
+        // this on the first call to ReadBuffer.  
+        private int ReadBuffer(Span<char> destination, out bool readToUserBuffer)
+        {
+            _charLen = 0;
+            _charPos = 0;
+
+            if (!_checkPreamble)
+            {
+                _byteLen = 0;
+            }
+
+            int charsRead = 0;
+            int desiredChars = destination.Length;
+
+            // As a perf optimization, we can decode characters DIRECTLY into a
+            // user's char[].  We absolutely must not write more characters 
+            // into the user's buffer than they asked for.  Calculating 
+            // encoding.GetMaxCharCount(byteLen) each time is potentially very 
+            // expensive - instead, cache the number of chars a full buffer's 
+            // worth of data may produce.  Yes, this makes the perf optimization 
+            // less aggressive, in that all reads that asked for fewer than AND 
+            // returned fewer than _maxCharsPerBuffer chars won't get the user 
+            // buffer optimization.  This affects reads where the end of the
+            // Stream comes in the middle somewhere, and when you ask for 
+            // fewer chars than your buffer could produce.
+            readToUserBuffer = desiredChars >= _maxCharsPerBuffer;
+
+            do
+            {
+                Debug.Assert(charsRead == 0);
+
+                if (_checkPreamble)
+                {
+                    Debug.Assert(_bytePos <= _encoding.Preamble.Length, "possible bug in _compressPreamble.  Are two threads using this StreamReader at the same time?");
+                    int len = _stream.Read(_byteBuffer, _bytePos, _byteBuffer.Length - _bytePos);
+                    Debug.Assert(len >= 0, "Stream.Read returned a negative number!  This is a bug in your stream class.");
+
+                    if (len == 0)
+                    {
+                        // EOF but we might have buffered bytes from previous 
+                        // attempt to detect preamble that needs to be decoded now
+                        if (_byteLen > 0)
+                        {
+                            if (readToUserBuffer)
+                            {
+                                charsRead = _decoder.GetChars(_byteBuffer, 0, _byteLen, userBuffer, charsRead);
+                                _charLen = 0;  // StreamReader's buffer is empty.
+                            }
+                            else
+                            {
+                                charsRead = _decoder.GetChars(_byteBuffer, 0, _byteLen, _charBuffer, charsRead);
+                                _charLen += charsRead;  // Number of chars in StreamReader's buffer.
+                            }
+                        }
+
+                        return charsRead;
+                    }
+
+                    _byteLen += len;
+                }
+                else
+                {
+                    Debug.Assert(_bytePos == 0, "bytePos can be non zero only when we are trying to _checkPreamble.  Are two threads using this StreamReader at the same time?");
+
+                    _byteLen = _stream.Read(_byteBuffer, 0, _byteBuffer.Length);
+
+                    Debug.Assert(_byteLen >= 0, "Stream.Read returned a negative number!  This is a bug in your stream class.");
+
+                    if (_byteLen == 0)  // EOF
+                    {
+                        break;
+                    }
+                }
+
+                // _isBlocked == whether we read fewer bytes than we asked for.
+                // Note we must check it here because CompressBuffer or 
+                // DetectEncoding will change byteLen.
+                _isBlocked = (_byteLen < _byteBuffer.Length);
+
+                // Check for preamble before detect encoding. This is not to override the
+                // user supplied Encoding for the one we implicitly detect. The user could
+                // customize the encoding which we will loose, such as ThrowOnError on UTF8
+                // Note: we don't need to recompute readToUserBuffer optimization as IsPreamble
+                // doesn't change the encoding or affect _maxCharsPerBuffer
+                if (IsPreamble())
+                {
+                    continue;
+                }
+
+                // On the first call to ReadBuffer, if we're supposed to detect the encoding, do it.
+                if (_detectEncoding && _byteLen >= 2)
+                {
+                    DetectEncoding();
+                    // DetectEncoding changes some buffer state.  Recompute this.
+                    readToUserBuffer = desiredChars >= _maxCharsPerBuffer;
+                }
+
+                _charPos = 0;
+                if (readToUserBuffer)
+                {
+                    charsRead += _decoder.GetChars(_byteBuffer, 0, _byteLen, userBuffer, charsRead);
+                    _charLen = 0;  // StreamReader's buffer is empty.
+                }
+                else
+                {
+                    charsRead = _decoder.GetChars(_byteBuffer, 0, _byteLen, _charBuffer, charsRead);
+                    _charLen += charsRead;  // Number of chars in StreamReader's buffer.
+                }
+            } while (charsRead == 0);
+
+            _isBlocked &= charsRead < desiredChars;
+
+            //Console.WriteLine("ReadBuffer: charsRead: "+charsRead+"  readToUserBuffer: "+readToUserBuffer);
+            return charsRead;
+        }
 
         // Reads a line. A line is defined as a sequence of characters followed by
         // a carriage return ('\r'), a line feed ('\n'), or a carriage return

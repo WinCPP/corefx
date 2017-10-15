@@ -13,15 +13,12 @@ namespace System.IO.Tests
 {
     public class Perf_StreamReader : Perf_StreamBase
     {
-        private static readonly char[] s_readData;
-        private static readonly MemoryStream s_stream;
-        private static readonly StreamReader s_reader;
+        private static readonly byte[] s_readData;
 
         static Perf_StreamReader()
         {
-            s_readData = new char[s_length.Max() * DefaultStreamBufferSize];
-            s_stream = new MemoryStream(Encoding.ASCII.GetBytes(s_readData));
-            s_reader = new StreamReader(s_stream, new UTF8Encoding(false, true), true, s_readData.Length);
+            string readData = new string('a', s_length.Max() * DefaultStreamBufferSize);
+            s_readData = Encoding.ASCII.GetBytes(readData);
         }
 
         [Benchmark]
@@ -29,11 +26,28 @@ namespace System.IO.Tests
         public void ReadCharArray(int readLength)
         {
             char[] charArray = new char[s_length.Max()];
-            PerformanceLoop(readLength, () =>
+
+            int innerIterations = MemoryStreamSize / readLength;
+            int outerIteration = TotalCount / innerIterations;            
+            using (var stream = new MemoryStream(s_readData))
+            {
+                using (var reader = new StreamReader(stream, new UTF8Encoding(false, true), true, s_readData.Length))
                 {
-                    s_reader.Read(charArray, 0, readLength);
+                    foreach (BenchmarkIteration iteration in Benchmark.Iterations)
+                    {
+                        using (iteration.StartMeasurement())
+                        {
+                            for (int i = 0; i < outerIteration; i++)
+                            {
+                                for (int j = 0; j < innerIterations; j++)
+                                {
+                                    reader.Read(charArray);
+                                }
+                            }
+                        }
+                    }
                 }
-            );
+            }
         }
 
         [Benchmark]
@@ -45,15 +59,21 @@ namespace System.IO.Tests
 
             int innerIterations = MemoryStreamSize / readLength;
             int outerIteration = TotalCount / innerIterations;
-            foreach (BenchmarkIteration iteration in Benchmark.Iterations)
+            using (var stream = new MemoryStream(s_readData))
             {
-                using (iteration.StartMeasurement())
+                using (var reader = new StreamReader(stream, new UTF8Encoding(false, true), true, s_readData.Length))
                 {
-                    for (int i = 0; i < outerIteration; i++)
+                    foreach (BenchmarkIteration iteration in Benchmark.Iterations)
                     {
-                        for (int j = 0; j < innerIterations; j++)
+                        using (iteration.StartMeasurement())
                         {
-                            s_reader.Read(charSpan);
+                            for (int i = 0; i < outerIteration; i++)
+                            {
+                                for (int j = 0; j < innerIterations; j++)
+                                {
+                                    reader.Read(charSpan);
+                                }
+                            }
                         }
                     }
                 }
