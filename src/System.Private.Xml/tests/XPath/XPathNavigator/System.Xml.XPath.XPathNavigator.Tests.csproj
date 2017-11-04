@@ -15,7 +15,9 @@
     <CommonPathXPath>$(CommonPath)\System\Xml\XPath</CommonPathXPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="XmlAssert.cs" />
     <Compile Include="XPathNavigatorCommonTests.cs" />
+    <Compile Include="XPathNavigatorReaderTests.cs" />
     <Compile Include="XPathNavigatorTests.cs" />
   </ItemGroup>
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), dir.targets))\dir.targets" />

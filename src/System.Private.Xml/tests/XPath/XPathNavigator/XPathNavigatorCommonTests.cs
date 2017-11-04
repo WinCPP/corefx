@@ -12,29 +12,29 @@ namespace XPathTests.XPathNavigatorTests
 {
     public class XPathNavigatorCommonTests
     {
-        XmlDocument document;
-        XPathNavigator nav;
-        XPathDocument xpathDocument;
+        XmlDocument _document;
+        XPathNavigator _nav;
+        XPathDocument _xpathDocument;
 
         private XPathNavigator GetXmlDocumentNavigator(string xml)
         {
-            document = new XmlDocument();
-            document.LoadXml(xml);
-            return document.CreateNavigator();
+            _document = new XmlDocument();
+            _document.LoadXml(xml);
+            return _document.CreateNavigator();
         }
 
         private XPathNavigator GetXPathDocumentNavigator(XmlNode node)
         {
             XmlNodeReader xr = new XmlNodeReader(node);
-            xpathDocument = new XPathDocument(xr);
-            return xpathDocument.CreateNavigator();
+            _xpathDocument = new XPathDocument(xr);
+            return _xpathDocument.CreateNavigator();
         }
 
         private XPathNavigator GetXPathDocumentNavigator(XmlNode node, XmlSpace space)
         {
             XmlNodeReader xr = new XmlNodeReader(node);
-            xpathDocument = new XPathDocument(xr, space);
-            return xpathDocument.CreateNavigator();
+            _xpathDocument = new XPathDocument(xr, space);
+            return _xpathDocument.CreateNavigator();
         }
 
         private void AssertNavigator(XPathNavigator nav, XPathNodeType type, string prefix, string localName, string ns, string name, string value, bool hasAttributes, bool hasChildren, bool isEmptyElement)
@@ -55,10 +55,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<?xml version=\"1.0\" standalone=\"yes\"?><foo>bar</foo>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            DocumentWithXmlDeclaration(nav);
-            nav = GetXPathDocumentNavigator(document);
-            DocumentWithXmlDeclaration(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            DocumentWithXmlDeclaration(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            DocumentWithXmlDeclaration(_nav);
         }
 
         public void DocumentWithXmlDeclaration(XPathNavigator nav)
@@ -72,10 +72,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<?xml-stylesheet href='foo.xsl' type='text/xsl' ?><foo />";
 
-            nav = GetXmlDocumentNavigator(xml);
-            DocumentWithProcessingInstruction(nav);
-            nav = GetXPathDocumentNavigator(document);
-            DocumentWithProcessingInstruction(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            DocumentWithProcessingInstruction(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            DocumentWithProcessingInstruction(_nav);
         }
 
         public void DocumentWithProcessingInstruction(XPathNavigator nav)
@@ -90,10 +90,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<foo />";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlRootElementOnly(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlRootElementOnly(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlRootElementOnly(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlRootElementOnly(_nav);
         }
 
         private void XmlRootElementOnly(XPathNavigator nav)
@@ -114,10 +114,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<foo>Test.</foo>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlSimpleTextContent(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlSimpleTextContent(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlSimpleTextContent(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlSimpleTextContent(_nav);
         }
 
         private void XmlSimpleTextContent(XPathNavigator nav)
@@ -148,10 +148,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<foo><bar /></foo>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlSimpleElementContent(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlSimpleElementContent(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlSimpleElementContent(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlSimpleElementContent(_nav);
         }
 
         private void XmlSimpleElementContent(XPathNavigator nav)
@@ -178,10 +178,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<foo><bar /><baz /></foo>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlTwoElementsContent(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlTwoElementsContent(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlTwoElementsContent(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlTwoElementsContent(_nav);
         }
 
         private void XmlTwoElementsContent(XPathNavigator nav)
@@ -214,10 +214,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<img src='foo.png' alt='image Fooooooo!' />";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlElementWithAttributes(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlElementWithAttributes(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlElementWithAttributes(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlElementWithAttributes(_nav);
         }
 
         private void XmlElementWithAttributes(XPathNavigator nav)
@@ -254,10 +254,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<html xmlns='http://www.w3.org/1999/xhtml'><body>test.</body></html>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            XmlNamespaceNode(nav);
-            nav = GetXPathDocumentNavigator(document);
-            XmlNamespaceNode(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            XmlNamespaceNode(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            XmlNamespaceNode(_nav);
         }
 
         private void XmlNamespaceNode(XPathNavigator nav)
@@ -314,10 +314,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<a xmlns:x='urn:x'><b xmlns:y='urn:y'/><c/><d><e attr='a'/></d></a>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            MoveToNamespaces(nav);
-            nav = GetXPathDocumentNavigator(document);
-            MoveToNamespaces(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            MoveToNamespaces(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            MoveToNamespaces(_nav);
         }
 
         private void MoveToNamespaces(XPathNavigator nav)
@@ -337,10 +337,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<a><b/><c/><d><e attr='a'/></d></a>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            IsDescendant(nav);
-            nav = GetXPathDocumentNavigator(document);
-            IsDescendant(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            IsDescendant(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            IsDescendant(_nav);
         }
 
         private void IsDescendant(XPathNavigator nav)
@@ -369,10 +369,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<root><![CDATA[Fact]]> string</root>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            LiterallySplittedText(nav);
-            nav = GetXPathDocumentNavigator(document);
-            LiterallySplittedText(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            LiterallySplittedText(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            LiterallySplittedText(_nav);
         }
 
         private void LiterallySplittedText(XPathNavigator nav)
@@ -388,10 +388,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = "<root><foo xmlns='urn:foo' /><ns:foo xmlns:ns='urn:foo' /></root>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            SelectChildrenNS(nav);
-            nav = GetXPathDocumentNavigator(document);
-            SelectChildrenNS(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            SelectChildrenNS(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            SelectChildrenNS(_nav);
         }
 
         private void SelectChildrenNS(XPathNavigator nav)
@@ -407,10 +407,10 @@ namespace XPathTests.XPathNavigatorTests
         {
             string xml = @"<?xml version=""1.0""?><one><two>Some data.</two></one>";
 
-            nav = GetXmlDocumentNavigator(xml);
-            OuterXml(nav);
-            nav = GetXPathDocumentNavigator(document);
-            OuterXml(nav);
+            _nav = GetXmlDocumentNavigator(xml);
+            OuterXml(_nav);
+            _nav = GetXPathDocumentNavigator(_document);
+            OuterXml(_nav);
         }
 
         private void OuterXml(XPathNavigator nav)
@@ -428,7 +428,7 @@ namespace XPathTests.XPathNavigatorTests
             var doc = new XmlDocument();
             doc.LoadXml(xml);
             XPathNavigator nav = doc.LastChild.LastChild.CreateNavigator();
-            var xr = nav.ReadSubtree();
+            XmlReader xr = nav.ReadSubtree();
             xr.MoveToContent();
             xr.Read(); // should be at x:val
             Assert.Equal("urn:x", xr.LookupNamespace("x"));
@@ -438,12 +438,12 @@ namespace XPathTests.XPathNavigatorTests
         public void GetNamespaceConsistentTree()
         {
             string xml = "<x:root xmlns:x='urn:x'>  <x:foo xmlns='ns1'> <x:bar /> </x:foo>  <x:foo xmlns:y='ns2'> <x:baz /> </x:foo></x:root>";
-            nav = GetXmlDocumentNavigator(xml);
-            document.PreserveWhitespace = true;
+            _nav = GetXmlDocumentNavigator(xml);
+            _document.PreserveWhitespace = true;
 
-            GetNamespaceConsistentTree(nav);
-            nav = GetXPathDocumentNavigator(document, XmlSpace.Preserve);
-            GetNamespaceConsistentTree(nav);
+            GetNamespaceConsistentTree(_nav);
+            _nav = GetXPathDocumentNavigator(_document, XmlSpace.Preserve);
+            GetNamespaceConsistentTree(_nav);
         }
 
         private void GetNamespaceConsistentTree(XPathNavigator nav)

@@ -19,7 +19,7 @@ namespace XPathTests.XPathNavigatorTests
         {
             var document = new XmlDocument();
             document.LoadXml("<foo />");
-            var navigator = document.CreateNavigator();
+            XPathNavigator navigator = document.CreateNavigator();
             Assert.NotNull(navigator);
         }
 
@@ -29,13 +29,13 @@ namespace XPathTests.XPathNavigatorTests
             var document = new XmlDocument();
 
             document.LoadXml("<foo:bar xmlns:foo='#foo' />");
-            var navigator = document.CreateNavigator();
+            XPathNavigator navigator = document.CreateNavigator();
 
             Assert.Equal(XPathNodeType.Root, navigator.NodeType);
-            Assert.Equal(String.Empty, navigator.Name);
-            Assert.Equal(String.Empty, navigator.LocalName);
-            Assert.Equal(String.Empty, navigator.NamespaceURI);
-            Assert.Equal(String.Empty, navigator.Prefix);
+            Assert.Equal(string.Empty, navigator.Name);
+            Assert.Equal(string.Empty, navigator.LocalName);
+            Assert.Equal(string.Empty, navigator.NamespaceURI);
+            Assert.Equal(string.Empty, navigator.Prefix);
             Assert.True(!navigator.HasAttributes);
             Assert.True(navigator.HasChildren);
             Assert.True(!navigator.IsEmptyElement);
@@ -47,7 +47,7 @@ namespace XPathTests.XPathNavigatorTests
             var document = new XmlDocument();
 
             document.LoadXml("<foo:bar xmlns:foo='#foo' />");
-            var navigator = document.DocumentElement.CreateNavigator();
+            XPathNavigator navigator = document.DocumentElement.CreateNavigator();
 
             Assert.Equal(XPathNodeType.Element, navigator.NodeType);
             Assert.Equal("foo:bar", navigator.Name);
@@ -83,7 +83,7 @@ namespace XPathTests.XPathNavigatorTests
             var document = new XmlDocument();
             document.LoadXml("<root xmlns='urn:foo' />");
 
-            var navigator = document.DocumentElement.Attributes[0].CreateNavigator();
+            XPathNavigator navigator = document.DocumentElement.Attributes[0].CreateNavigator();
             Assert.Equal(XPathNodeType.Namespace, navigator.NodeType);
         }
 
@@ -93,7 +93,7 @@ namespace XPathTests.XPathNavigatorTests
             var document = new XmlDocument();
             document.LoadXml("<foo><bar /><baz /></foo>");
 
-            var navigator = document.DocumentElement.CreateNavigator();
+            XPathNavigator navigator = document.DocumentElement.CreateNavigator();
 
             Assert.Equal("foo", navigator.Name);
             Assert.True(navigator.MoveToFirstChild());
@@ -306,12 +306,12 @@ namespace XPathTests.XPathNavigatorTests
 
         class MyContext : XsltContext
         {
-            XsltArgumentList args;
+            XsltArgumentList _args;
 
             public MyContext(NameTable nt, XsltArgumentList args)
                 : base(nt)
             {
-                this.args = args;
+                _args = args;
             }
 
             public override IXsltContextFunction ResolveFunction(
@@ -334,7 +334,7 @@ namespace XPathTests.XPathNavigatorTests
 
             public override int CompareDocument(string uri1, string uri2)
             {
-                return String.CompareOrdinal(uri1, uri2);
+                return string.CompareOrdinal(uri1, uri2);
             }
 
             public override bool Whitespace
@@ -344,22 +344,22 @@ namespace XPathTests.XPathNavigatorTests
 
             public object GetParam(string name, string ns)
             {
-                return args.GetParam(name, ns);
+                return _args.GetParam(name, ns);
             }
         }
 
         public class MyFunction : IXsltContextFunction
         {
-            XPathResultType[] argtypes;
+            XPathResultType[] _argtypes;
 
             public MyFunction(XPathResultType[] argtypes)
             {
-                this.argtypes = argtypes;
+                _argtypes = argtypes;
             }
 
             public XPathResultType[] ArgTypes
             {
-                get { return argtypes; }
+                get { return _argtypes; }
             }
 
             public int Maxargs
@@ -386,16 +386,16 @@ namespace XPathTests.XPathNavigatorTests
 
         public class MyVariable : IXsltContextVariable
         {
-            string name;
+            string _name;
 
             public MyVariable(string name)
             {
-                this.name = name;
+                _name = name;
             }
 
             public object Evaluate(XsltContext ctx)
             {
-                return ((MyContext)ctx).GetParam(name, String.Empty);
+                return ((MyContext)ctx).GetParam(_name, string.Empty);
             }
 
             public bool IsLocal
@@ -418,8 +418,10 @@ namespace XPathTests.XPathNavigatorTests
         public void TextMatchesWhitespace()
         {
             string xml = "<root><ws>   </ws><sws xml:space='preserve'> </sws></root>";
-            XmlDocument doc = new XmlDocument();
-            doc.PreserveWhitespace = true;
+            XmlDocument doc = new XmlDocument
+            {
+                PreserveWhitespace = true
+            };
             doc.LoadXml(xml);
             XPathNavigator nav = doc.CreateNavigator();
             nav.MoveToFirstChild(); // root
@@ -430,22 +432,6 @@ namespace XPathTests.XPathNavigatorTests
             nav.MoveToNext(); // sws
             nav.MoveToFirstChild(); // ' '
             Assert.Equal(true, nav.Matches("text()"));
-        }
-
-        [Fact]
-        public void Bug456103()
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml("<root><X/></root>");
-
-            XPathNavigator nav = doc.DocumentElement.CreateNavigator();
-            // ".//*" does not reproduce the bug.
-            var i = nav.Select("descendant::*");
-
-            // without this call to get_Count() the bug does not reproduce.
-            Assert.Equal(1, i.Count);
-
-            Assert.True(i.MoveNext());
         }
 
         [Fact]
@@ -583,7 +569,7 @@ namespace XPathTests.XPathNavigatorTests
             Assert.Equal("<Foo>Hello</Foo>", iter.Current.OuterXml);
             iter = nav.Select("/Abc/Foo/text()");
             iter.MoveNext();
-            Assert.Equal(String.Empty, iter.Current.InnerXml);
+            Assert.Equal(string.Empty, iter.Current.InnerXml);
             Assert.Equal("Hello", iter.Current.OuterXml);
         }
 
@@ -616,7 +602,7 @@ namespace XPathTests.XPathNavigatorTests
             Assert.Equal(AlterNewLine("<Foo>Hello&lt;\r\nInnerXml</Foo>"), iter.Current.OuterXml);
             iter = nav.Select("/Abc/Foo/text()");
             iter.MoveNext();
-            Assert.Equal(String.Empty, iter.Current.InnerXml);
+            Assert.Equal(string.Empty, iter.Current.InnerXml);
             Assert.Equal(AlterNewLine("Hello&lt;\r\nInnerXml"), iter.Current.OuterXml);
         }
 
@@ -715,7 +701,7 @@ namespace XPathTests.XPathNavigatorTests
             string s = "<root> <foo> </foo> </root>";
             XPathDocument doc = new XPathDocument(new StringReader(s));
             XPathNavigator nav = doc.CreateNavigator();
-            XPathNodeIterator it = nav.SelectChildren(String.Empty, String.Empty);
+            XPathNodeIterator it = nav.SelectChildren(string.Empty, string.Empty);
             foreach (XPathNavigator xpn in it)
             {
                 Assert.Empty(xpn.Value);
