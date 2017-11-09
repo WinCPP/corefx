@@ -82,7 +82,7 @@ namespace XPathTests.XPathNavigatorTests
         {
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.ProcessingInstruction, "", "xml-stylesheet", "", "xml-stylesheet", "href='foo.xsl' type='text/xsl' ", false, false, false);
-            Assert.True(!nav.MoveToFirstChild());
+            Assert.False(nav.MoveToFirstChild());
         }
 
         [Fact]
@@ -101,12 +101,12 @@ namespace XPathTests.XPathNavigatorTests
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "", false, true, false);
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "foo", "", "foo", "", false, false, true);
-            Assert.True(!nav.MoveToFirstChild());
-            Assert.True(!nav.MoveToNext());
-            Assert.True(!nav.MoveToPrevious());
+            Assert.False(nav.MoveToFirstChild());
+            Assert.False(nav.MoveToNext());
+            Assert.False(nav.MoveToPrevious());
             nav.MoveToRoot();
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "", false, true, false);
-            Assert.True(!nav.MoveToNext());
+            Assert.False(nav.MoveToNext());
         }
 
         [Fact]
@@ -125,8 +125,8 @@ namespace XPathTests.XPathNavigatorTests
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "Test.", false, true, false);
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "foo", "", "foo", "Test.", false, true, false);
-            Assert.True(!nav.MoveToNext());
-            Assert.True(!nav.MoveToPrevious());
+            Assert.False(nav.MoveToNext());
+            Assert.False(nav.MoveToPrevious());
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Text, "", "", "", "", "Test.", false, false, false);
 
@@ -140,7 +140,7 @@ namespace XPathTests.XPathNavigatorTests
             nav.MoveToFirstChild();
             nav.MoveToRoot();
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "Test.", false, true, false);
-            Assert.True(!nav.MoveToNext());
+            Assert.False(nav.MoveToNext());
         }
 
         [Fact]
@@ -159,8 +159,8 @@ namespace XPathTests.XPathNavigatorTests
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "", false, true, false);
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "foo", "", "foo", "", false, true, false);
-            Assert.True(!nav.MoveToNext());
-            Assert.True(!nav.MoveToPrevious());
+            Assert.False(nav.MoveToNext());
+            Assert.False(nav.MoveToPrevious());
 
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "bar", "", "bar", "", false, false, true);
@@ -170,7 +170,7 @@ namespace XPathTests.XPathNavigatorTests
 
             nav.MoveToRoot();
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "", false, true, false);
-            Assert.True(!nav.MoveToNext());
+            Assert.False(nav.MoveToNext());
         }
 
         [Fact]
@@ -190,23 +190,23 @@ namespace XPathTests.XPathNavigatorTests
 
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "foo", "", "foo", "", false, true, false);
-            Assert.True(!nav.MoveToNext());
-            Assert.True(!nav.MoveToPrevious());
+            Assert.False(nav.MoveToNext());
+            Assert.False(nav.MoveToPrevious());
 
             Assert.True(nav.MoveToFirstChild());
             AssertNavigator(nav, XPathNodeType.Element, "", "bar", "", "bar", "", false, false, true);
-            Assert.True(!nav.MoveToFirstChild());
+            Assert.False(nav.MoveToFirstChild());
 
             Assert.True(nav.MoveToNext());
             AssertNavigator(nav, XPathNodeType.Element, "", "baz", "", "baz", "", false, false, true);
-            Assert.True(!nav.MoveToFirstChild());
+            Assert.False(nav.MoveToFirstChild());
 
             Assert.True(nav.MoveToPrevious());
             AssertNavigator(nav, XPathNodeType.Element, "", "bar", "", "bar", "", false, false, true);
 
             nav.MoveToRoot();
             AssertNavigator(nav, XPathNodeType.Root, "", "", "", "", "", false, true, false);
-            Assert.True(!nav.MoveToNext());
+            Assert.False(nav.MoveToNext());
         }
 
         [Fact]
@@ -224,23 +224,23 @@ namespace XPathTests.XPathNavigatorTests
         {
             nav.MoveToFirstChild();
             AssertNavigator(nav, XPathNodeType.Element, "", "img", "", "img", "", true, false, true);
-            Assert.True(!nav.MoveToNext());
-            Assert.True(!nav.MoveToPrevious());
+            Assert.False(nav.MoveToNext());
+            Assert.False(nav.MoveToPrevious());
 
             Assert.True(nav.MoveToFirstAttribute());
             AssertNavigator(nav, XPathNodeType.Attribute, "", "src", "", "src", "foo.png", false, false, false);
-            Assert.True(!nav.MoveToFirstAttribute()); // On attributes, it fails.
+            Assert.False(nav.MoveToFirstAttribute()); // On attributes, it fails.
 
             Assert.True(nav.MoveToNextAttribute());
             AssertNavigator(nav, XPathNodeType.Attribute, "", "alt", "", "alt", "image Fooooooo!", false, false, false);
-            Assert.True(!nav.MoveToNextAttribute());
+            Assert.False(nav.MoveToNextAttribute());
 
             Assert.True(nav.MoveToParent());
             AssertNavigator(nav, XPathNodeType.Element, "", "img", "", "img", "", true, false, true);
 
             Assert.True(nav.MoveToAttribute("alt", ""));
             AssertNavigator(nav, XPathNodeType.Attribute, "", "alt", "", "alt", "image Fooooooo!", false, false, false);
-            Assert.True(!nav.MoveToAttribute("src", "")); // On attributes, it fails.
+            Assert.False(nav.MoveToAttribute("src", "")); // On attributes, it fails.
             Assert.True(nav.MoveToParent());
             Assert.True(nav.MoveToAttribute("src", ""));
             AssertNavigator(nav, XPathNodeType.Attribute, "", "src", "", "src", "foo.png", false, false, false);
@@ -272,13 +272,13 @@ namespace XPathTests.XPathNavigatorTests
             AssertNavigator(nav, XPathNodeType.Namespace, "", "", "", "", xhtml, false, false, false);
 
             // Test difference between Local, ExcludeXml and All.
-            Assert.True(!nav.MoveToNextNamespace(XPathNamespaceScope.Local));
-            Assert.True(!nav.MoveToNextNamespace(XPathNamespaceScope.ExcludeXml));
+            Assert.False(nav.MoveToNextNamespace(XPathNamespaceScope.Local));
+            Assert.False(nav.MoveToNextNamespace(XPathNamespaceScope.ExcludeXml));
 
             // see http://support.microsoft.com/default.aspx?scid=kb;EN-US;Q316808
             Assert.True(nav.MoveToNextNamespace(XPathNamespaceScope.All));
             AssertNavigator(nav, XPathNodeType.Namespace, "", "xml", "", "xml", xmlNS, false, false, false);
-            Assert.True(!nav.MoveToNextNamespace(XPathNamespaceScope.All));
+            Assert.False(nav.MoveToNextNamespace(XPathNamespaceScope.All));
 
             // Test to check if MoveToRoot() resets Namespace node status.
             nav.MoveToRoot();
@@ -296,7 +296,7 @@ namespace XPathTests.XPathNavigatorTests
 
             nav.MoveToFirstChild(); // body
                                     // Test difference between Local and ExcludeXml
-            Assert.True(!nav.MoveToFirstNamespace(XPathNamespaceScope.Local), "Local should fail");
+            Assert.False(nav.MoveToFirstNamespace(XPathNamespaceScope.Local), "Local should fail");
             Assert.True(nav.MoveToFirstNamespace(XPathNamespaceScope.ExcludeXml), "ExcludeXml should succeed");
             AssertNavigator(nav, XPathNodeType.Namespace, "", "", "", "", xhtml, false, false, false);
 
@@ -353,15 +353,15 @@ namespace XPathTests.XPathNavigatorTests
             Assert.Equal("attr", nav.Name);
             Assert.Equal("", tmp.Name);
             Assert.True(tmp.IsDescendant(nav));
-            Assert.True(!nav.IsDescendant(tmp));
+            Assert.False(nav.IsDescendant(tmp));
             tmp.MoveToFirstChild();
             Assert.Equal("a", tmp.Name);
             Assert.True(tmp.IsDescendant(nav));
-            Assert.True(!nav.IsDescendant(tmp));
+            Assert.False(nav.IsDescendant(tmp));
             tmp.MoveTo(iter.Current);
             Assert.Equal("e", tmp.Name);
             Assert.True(tmp.IsDescendant(nav));
-            Assert.True(!nav.IsDescendant(tmp));
+            Assert.False(nav.IsDescendant(tmp));
         }
 
         [Fact]

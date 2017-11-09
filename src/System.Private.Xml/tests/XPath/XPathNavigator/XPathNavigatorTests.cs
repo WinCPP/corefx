@@ -36,9 +36,9 @@ namespace XPathTests.XPathNavigatorTests
             Assert.Equal(string.Empty, navigator.LocalName);
             Assert.Equal(string.Empty, navigator.NamespaceURI);
             Assert.Equal(string.Empty, navigator.Prefix);
-            Assert.True(!navigator.HasAttributes);
+            Assert.False(navigator.HasAttributes);
             Assert.True(navigator.HasChildren);
-            Assert.True(!navigator.IsEmptyElement);
+            Assert.False(navigator.IsEmptyElement);
         }
 
         [Fact]
@@ -54,8 +54,8 @@ namespace XPathTests.XPathNavigatorTests
             Assert.Equal("bar", navigator.LocalName);
             Assert.Equal("#foo", navigator.NamespaceURI);
             Assert.Equal("foo", navigator.Prefix);
-            Assert.True(!navigator.HasAttributes);
-            Assert.True(!navigator.HasChildren);
+            Assert.False(navigator.HasAttributes);
+            Assert.False(navigator.HasChildren);
             Assert.True(navigator.IsEmptyElement);
         }
 
