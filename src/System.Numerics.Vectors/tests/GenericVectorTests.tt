@@ -59,6 +59,34 @@ namespace System.Numerics.Tests
     {
 #>
         [Fact]
+        public void ConstructorArrayWithCountException<#=type.Name#>()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<<#=type.Name#>>();
+            }
+        }
+<#
+    }
+#>
+        private void TestConstructorArrayWithCountException<T>() where T : struct
+        {
+            Assert.Throws<NullReferenceException>(() => new Vector<T>((T[])null, 0));
+
+            T[] values = GenerateRandomValuesForVector<T>().ToArray();
+            var vector = new Vector<T>(values);
+            ValidateVector(vector,
+                (index, val) =>
+                {
+                    Assert.Equal(values[index], val);
+                });
+        }
+
+<# 
+    foreach (var type in supportedTypes)
+    {
+#>
+        [Fact]
         public void ConstructorWithOffset<#=type.Name#>() { TestConstructorWithOffset<<#=type.Name#>>(); }
 <#
     }

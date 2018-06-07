@@ -61,6 +61,99 @@ namespace System.Numerics.Tests
         }
 
         [Fact]
+        public void ConstructorArrayWithCountExceptionByte()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Byte>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionSByte()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<SByte>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionUInt16()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<UInt16>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionInt16()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Int16>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionUInt32()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<UInt32>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionInt32()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Int32>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionUInt64()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<UInt64>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionInt64()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Int64>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionSingle()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Single>();
+            }
+        }
+        [Fact]
+        public void ConstructorArrayWithCountExceptionDouble()
+        {
+            for (int counter = 0; counter < 100; ++counter)
+            {
+                TestConstructorArrayWithCountException<Double>();
+            }
+        }
+        private void TestConstructorArrayWithCountException<T>() where T : struct
+        {
+            Assert.Throws<NullReferenceException>(() => new Vector<T>((T[])null, 0));
+
+            T[] values = GenerateRandomValuesForVector<T>().ToArray();
+            var vector = new Vector<T>(values);
+            ValidateVector(vector,
+                (index, val) =>
+                {
+                    Assert.Equal(values[index], val);
+                });
+        }
+
+        [Fact]
         public void ConstructorWithOffsetByte() { TestConstructorWithOffset<Byte>(); }
         [Fact]
         public void ConstructorWithOffsetSByte() { TestConstructorWithOffset<SByte>(); }
