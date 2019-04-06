@@ -383,6 +383,9 @@ namespace System.Text.Json.Tests
             sequence = JsonTestHelper.GetSequence(data, 1);
             TestReadingJsonWithComments(data, sequence, expectedWithoutComments, expectedWithComments);
 
+            sequence = JsonTestHelper.GetSequence(data, 6);
+            TestReadingJsonWithComments(data, sequence, expectedWithoutComments, expectedWithComments);
+
             var firstSegment = new BufferSegment<byte>(ReadOnlyMemory<byte>.Empty);
             ReadOnlyMemory<byte> secondMem = data;
             BufferSegment<byte> secondSegment = firstSegment.Append(secondMem);
